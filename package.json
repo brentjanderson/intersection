@@ -1,0 +1,39 @@
+{
+  "name": "intersection",
+  "version": "1.0.0",
+  "description": "Yours.co interview project",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "start": "node index.js",
+    "commitmsg": "commitlint -e $GIT_PARAMS",
+    "watch": "webpack --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brentjanderson/intersection.git"
+  },
+  "author": "Brent Anderson <me@brentjanderson.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/brentjanderson/intersection/issues"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "eslintIntegration": true
+  },
+  "homepage": "https://github.com/brentjanderson/intersection#readme",
+  "dependencies": {
+    "express": "^4.16.2"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^4.3.0",
+    "@commitlint/config-angular": "^4.3.0",
+    "eslint": "^4.11.0",
+    "gsap": "^1.20.3",
+    "husky": "^0.14.3",
+    "mocha": "^4.0.1",
+    "prettier": "^1.8.2",
+    "webpack": "^3.8.1"
+  }
+}
