@@ -69,19 +69,56 @@
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__autoResizeCanvas__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__renderLanes__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__renderLanes__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__repository__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__logic_stoplight__ = __webpack_require__(4);
+// import autoResizeCanvas from './autoResizeCanvas';
 
 
+
+
+const repository = new __WEBPACK_IMPORTED_MODULE_1__repository__["a" /* default */]();
 
 var canvas = new fabric.StaticCanvas('intersection');
 // autoResizeCanvas(canvas);
 
-Object(__WEBPACK_IMPORTED_MODULE_1__renderLanes__["a" /* default */])(canvas);
+Object(__WEBPACK_IMPORTED_MODULE_0__renderLanes__["a" /* default */])(canvas);
+
+// Initialize component system
+
+// Setup North/South and East/West stoplights
+const sl_ns_left_id = repository.putEntity({
+  state: 'green',
+  timeToRed: -1,
+  position: 'ns',
+  is_left: true
+});
+const sl_ns_id = repository.putEntity({
+  state: 'green',
+  timeToRed: -1,
+  position: 'ns',
+  is_left: false
+});
+const sl_ew_left_id = repository.putEntity({
+  state: 'red',
+  timeToRed: -1,
+  position: 'ew',
+  is_left: true
+});
+const sl_ew_id = repository.putEntity({
+  state: 'red',
+  timeToRed: -1,
+  position: 'ew',
+  is_left: false
+});
+const stoplight_ids = [sl_ns_left_id, sl_ns_id, sl_ew_left_id, sl_ew_id];
 
 let lastFrameTimestamp = null;
 function renderLoop(stamp) {
   if (!lastFrameTimestamp) lastFrameTimestamp = stamp;
+
+  // Handle stoplight logic
+  stoplight_ids.reduce(__WEBPACK_IMPORTED_MODULE_2__logic_stoplight__["a" /* default */].decrementTimer);
   window.requestAnimationFrame(renderLoop);
 }
 
@@ -89,26 +126,7 @@ window.requestAnimationFrame(renderLoop);
 
 
 /***/ }),
-/* 1 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* unused harmony export default */
-/**
- * Register automatic resizing of our canvas
- * @param {canvas} canvas Canvas to register for resizing
- */
-function autoResizeCanvas(canvas) {
-  window.addEventListener('resize', canvasResized, false);
-  function canvasResized() {
-    canvas.setWidth(canvas.wrapperEl.innerWidth);
-    canvas.setHeight(canvas.wrapperEl.innerHeight);
-  }
-  canvasResized();
-}
-
-
-/***/ }),
+/* 1 */,
 /* 2 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -202,6 +220,69 @@ function renderLanes(canvas) {
       return cvs.add(lane);
     }, canvas);
 }
+
+
+/***/ }),
+/* 3 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class Repository {
+  constructor() {
+    this.entities = {};
+    this.components = {};
+    this.entityCounter = 0;
+  }
+
+  putEntity(entity) {
+    if (!entity._id) entity._id = entityCounter++;
+    this.entities[entity._id] = entity;
+    return entity._id;
+  }
+
+  removeEntity(entity) {
+    delete this.entities[entity._id];
+  }
+
+  getEntityById(_id) {
+    return this.entities[_id];
+  }
+
+  attachComponentToEntity(component, entity) {
+    let _entityId, _componentId;
+    if (entity._id !== undefined && Number.isInteger(entity._id)) {
+      _entityId = entity._id;
+    } else {
+      _entityId = entity;
+    }
+
+    if (this.components[_componentId] === undefined) {
+      this.components[_componentId] = [];
+    }
+
+    this.components[_componentId].push(entity._id);
+  }
+
+  removeComponentFromEntity(component, entity) {
+    throw 'Not yet implemented';
+  }
+
+  getEntitiesByComponentId(_id) {
+    return this.components(_id);
+  }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = Repository;
+
+
+
+/***/ }),
+/* 4 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony default export */ __webpack_exports__["a"] = ({
+  shouldTransitionStoplight(stoplight) {}
+});
 
 
 /***/ })
