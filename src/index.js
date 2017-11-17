@@ -3,7 +3,7 @@ import TrafficManager from './objects/traffic_manager';
 import TrafficLane from './objects/traffic_lane';
 import eventEmitter from './pubsub';
 
-var canvas = new fabric.Canvas('intersection');
+var canvas = new fabric.StaticCanvas('intersection');
 
 // Create lane objects
 const LANE_WIDTH = 20;
