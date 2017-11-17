@@ -69,29 +69,113 @@
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__renderLanes__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__objects_stoplight__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__pubsub__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__objects_stoplight__ = __webpack_require__(4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__objects_traffic_manager__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__objects_traffic_lane__ = __webpack_require__(8);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__pubsub__ = __webpack_require__(5);
 
 
 
 
-var canvas = new fabric.StaticCanvas('intersection');
 
-const lane_objects = Object(__WEBPACK_IMPORTED_MODULE_0__renderLanes__["a" /* default */])(canvas);
+var canvas = new fabric.Canvas('intersection');
+
+// Create lane objects
+const LANE_WIDTH = 20;
+const LANE_HEIGHT = 100;
+const LANE_SIDES = ['north', 'south', 'east', 'west'];
+const LANE_DIRECTIONS = [
+  'right',
+  'straight',
+  'straight',
+  'left',
+  'oncoming',
+  'oncoming'
+];
+const LANE_NUMBERS = [0, 1, 2, 3, 4, 5];
+const LANE_DIRECTION_BY_SIDE_FOR_INDEX = (side, index) => {
+  switch (side) {
+    case 'north':
+    case 'east':
+      return LANE_DIRECTIONS[index];
+    case 'west':
+    case 'south':
+      return LANE_DIRECTIONS[LANE_NUMBERS.length - index - 1];
+  }
+};
+
+const lanes = LANE_SIDES.map(side => {
+  return LANE_NUMBERS.map(lane_num => {
+    return new __WEBPACK_IMPORTED_MODULE_2__objects_traffic_lane__["a" /* default */]({
+      side: side,
+      index: lane_num,
+      direction: LANE_DIRECTION_BY_SIDE_FOR_INDEX(side, lane_num),
+      width: LANE_WIDTH,
+      height: LANE_HEIGHT
+    });
+  });
+}).reduce((lanes, lane_set) => lanes.concat(lane_set), []);
+
+console.log(lanes);
+
+// Draw the traffic lanes in place
+lanes.reduce((cvs, lane) => cvs.add(lane.canvasElement), canvas);
 
 // Create stoplight objects
-const sl_ns_left = new __WEBPACK_IMPORTED_MODULE_1__objects_stoplight__["a" /* default */]('ns', true, 'orange', lane_objects.ns.left);
-const sl_ns = new __WEBPACK_IMPORTED_MODULE_1__objects_stoplight__["a" /* default */]('ns', false, 'green', lane_objects.ns.rest);
-const sl_ew_left = new __WEBPACK_IMPORTED_MODULE_1__objects_stoplight__["a" /* default */]('ew', true, 'red', lane_objects.ew.left);
-const sl_ew = new __WEBPACK_IMPORTED_MODULE_1__objects_stoplight__["a" /* default */]('ew', false, 'red', lane_objects.ew.rest);
+const sl_ns_left = new __WEBPACK_IMPORTED_MODULE_0__objects_stoplight__["a" /* default */](
+  'ns',
+  true,
+  'orange',
+  lanes.filter(lane => {
+    return (
+      (lane.side === 'north' || lane.side === 'south') &&
+      lane.direction === 'left'
+    );
+  })
+);
+const sl_ns = new __WEBPACK_IMPORTED_MODULE_0__objects_stoplight__["a" /* default */](
+  'ns',
+  false,
+  'green',
+  lanes.filter(lane => {
+    return (
+      (lane.side === 'north' || lane.side === 'south') &&
+      lane.direction !== 'left'
+    );
+  })
+);
+const sl_ew_left = new __WEBPACK_IMPORTED_MODULE_0__objects_stoplight__["a" /* default */](
+  'ew',
+  true,
+  'red',
+  lanes.filter(lane => {
+    return (
+      (lane.side === 'east' || lane.side === 'west') &&
+      lane.direction === 'left'
+    );
+  })
+);
+const sl_ew = new __WEBPACK_IMPORTED_MODULE_0__objects_stoplight__["a" /* default */](
+  'ew',
+  false,
+  'red',
+  lanes.filter(lane => {
+    return (
+      (lane.side === 'east' || lane.side === 'west') &&
+      lane.direction !== 'left'
+    );
+  })
+);
+
+// Create traffic manager
+const traffic_manager = new __WEBPACK_IMPORTED_MODULE_1__objects_traffic_manager__["a" /* default */]();
 
 let lastFrameTimestamp = null;
 function renderLoop(stamp) {
   if (!lastFrameTimestamp) lastFrameTimestamp = stamp;
   const time_diff = stamp - lastFrameTimestamp;
 
-  __WEBPACK_IMPORTED_MODULE_2__pubsub__["a" /* default */].emit('tick', time_diff);
+  __WEBPACK_IMPORTED_MODULE_3__pubsub__["a" /* default */].emit('tick', time_diff);
 
   lastFrameTimestamp = stamp;
 
@@ -101,116 +185,13 @@ function renderLoop(stamp) {
 
 window.requestAnimationFrame(renderLoop);
 
-
-/***/ }),
-/* 1 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (immutable) */ __webpack_exports__["a"] = renderLanes;
-const LANE_WIDTH = 20;
-const LANE_HEIGHT = 100;
-
-/**
- * Generate a lane for the top part of the intersection, by index
- * @param {Number} idx Index of the lane to render
- */
-function generateTopLane(idx) {
-  return new fabric.Rect({
-    width: LANE_WIDTH,
-    height: LANE_HEIGHT,
-    left: LANE_HEIGHT + LANE_WIDTH * idx,
-    top: 0,
-    strokeWidth: 2,
-    stroke: 'gray',
-    fill: 'rgba(0,0,0,0)'
-  });
-}
-
-/**
- * Generate a lane for the left part of the intersection, by index
- * @param {Number} idx Index of the lane to render
- */
-function generateLeftLane(idx) {
-  return new fabric.Rect({
-    width: LANE_HEIGHT,
-    height: LANE_WIDTH,
-    left: 0,
-    top: LANE_HEIGHT + LANE_WIDTH * idx,
-    strokeWidth: 2,
-    stroke: 'gray',
-    fill: 'rgba(0,0,0,0)'
-  });
-}
-
-/**
- * Generate a lane for the right part of the intersection, by index
- * @param {Number} idx Index of the lane to render
- */
-function generateRightLane(idx) {
-  return new fabric.Rect({
-    width: LANE_HEIGHT,
-    height: LANE_WIDTH,
-    left: LANE_HEIGHT + LANE_WIDTH * 6,
-    top: LANE_HEIGHT + LANE_WIDTH * idx,
-    strokeWidth: 2,
-    stroke: 'gray',
-    fill: 'rgba(0,0,0,0)'
-  });
-}
-
-/**
- * Generate a lane for the bottom part of the intersection, by index
- * @param {Number} idx Index of the lane to render
- */
-function generateBottomLane(idx) {
-  return new fabric.Rect({
-    width: LANE_WIDTH,
-    height: LANE_HEIGHT,
-    left: LANE_HEIGHT + LANE_WIDTH * idx,
-    top: LANE_HEIGHT + LANE_WIDTH * 6,
-    strokeWidth: 2,
-    stroke: 'gray',
-    fill: 'rgba(0,0,0,0)'
-  });
-}
-
-/**
- * Generate and draw all the lanes associated with this canvas
- * @param {Canvas} canvas
- */
-function renderLanes(canvas) {
-  const lanes = [0, 1, 2, 3, 4, 5]
-    .map(el => {
-      return [
-        generateTopLane(el),
-        generateLeftLane(el),
-        generateRightLane(el),
-        generateBottomLane(el)
-      ];
-    })
-    .reduce((lanes, laneSet) => {
-      return lanes.concat(laneSet);
-    }, []);
-
-  lanes.reduce((cvs, lane) => {
-    return cvs.add(lane);
-  }, canvas);
-
-  return {
-    ns: {
-      left: [lanes[12], lanes[11]],
-      rest: [lanes[0], lanes[4], lanes[8], lanes[15], lanes[19], lanes[23]]
-    },
-    ew: {
-      left: [lanes[9], lanes[14]],
-      rest: [lanes[2], lanes[6], lanes[10], lanes[13], lanes[17], lanes[21]]
-    }
-  };
-}
+document.getElementById('add-car').addEventListener('click', ev => {
+  __WEBPACK_IMPORTED_MODULE_3__pubsub__["a" /* default */].emit('new-car');
+});
 
 
 /***/ }),
+/* 1 */,
 /* 2 */,
 /* 3 */,
 /* 4 */
@@ -220,7 +201,7 @@ function renderLanes(canvas) {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__pubsub__ = __webpack_require__(5);
 
 
-const speed_constant = 8;
+const speed_constant = 1;
 
 const left_blink_interval = 500 / speed_constant; // 500 ms between blinks
 const green_light_interval = 10000 / speed_constant; // 10s to run a green light
@@ -251,6 +232,14 @@ class Stoplight {
       initial_status === 'green' ? green_light_interval : undefined;
     this.left_blink_timer = left_blink_interval;
     this.light_visible = true;
+
+    this._carHandler = __WEBPACK_IMPORTED_MODULE_0__pubsub__["a" /* default */].on(
+      'new-car',
+      car_opts => {
+        //
+      },
+      this
+    );
 
     this._tickHandler = __WEBPACK_IMPORTED_MODULE_0__pubsub__["a" /* default */].on(
       'tick',
@@ -326,8 +315,8 @@ class Stoplight {
 
         // Update lane objects for animation
         lane_objects.forEach(lane => {
-          if (this.light_visible) lane.set({ fill: this.status });
-          else lane.set({ fill: 'rgba(0,0,0,0)' });
+          if (this.light_visible) lane.canvasElement.set({ fill: this.status });
+          else lane.canvasElement.set({ fill: 'rgba(0,0,0,0)' });
         });
       },
       this
@@ -720,6 +709,132 @@ EventEmitter.EventEmitter = EventEmitter;
 if (true) {
   module.exports = EventEmitter;
 }
+
+
+/***/ }),
+/* 7 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__pubsub__ = __webpack_require__(5);
+
+
+class TrafficManager {
+  constructor(opts) {
+    if (opts === undefined) {
+      opts = {};
+    }
+    // Average frequency per car
+    this.car_arrival_frequency = opts.car_arrival_frequency || 10000;
+    // Amount to plus/minus from average frequency
+    this.car_arrival_spread = opts.car_arrival_spread || 2000;
+    // Timer for first car arrival
+    this.time_since_last_car =
+      this.car_arrival_frequency +
+      (Math.random() * 2 - 1) * this.car_arrival_spread;
+
+    this._tickHandler = __WEBPACK_IMPORTED_MODULE_0__pubsub__["a" /* default */].on('tick', time_since_last_tick => {
+      this.time_since_last_car -= time_since_last_tick;
+      if (this.time_since_last_car <= 0) {
+        this.time_since_last_car +=
+          this.car_arrival_frequency +
+          (Math.random() * 2 - 1) * this.car_arrival_spread;
+
+        __WEBPACK_IMPORTED_MODULE_0__pubsub__["a" /* default */].emit('new-car', {
+          direction: Math.random() >= 0.5 ? 'ns' : 'ew',
+          lane: Math.ceil(Math.random() * 4)
+        });
+      }
+    });
+  }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = TrafficManager;
+
+
+
+/***/ }),
+/* 8 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+const STROKE_WIDTH = 2;
+
+class TrafficLane {
+  constructor(opts) {
+    this.side = opts.side;
+    this.index = opts.index;
+    this.direction = opts.direction;
+    this.width = opts.width;
+    this.height = opts.height;
+
+    this.canvasElement = new fabric.Rect({
+      width: this.lane_width(),
+      height: this.lane_height(),
+      left: this.lane_left(),
+      top: this.lane_top(),
+      strokeWidth: STROKE_WIDTH,
+      stroke: 'gray',
+      fill: 'rgba(0,0,0,0)'
+      //   angle: this.lane_angle(opts.side)
+    });
+  }
+  lane_width() {
+    switch (this.side) {
+      case 'south':
+      case 'north':
+        return this.width;
+      case 'west':
+      case 'east':
+        return this.height;
+      default:
+        throw 'Unknown lane direction';
+    }
+  }
+  lane_height() {
+    switch (this.side) {
+      case 'south':
+      case 'north':
+        return this.height;
+      case 'west':
+      case 'east':
+        return this.width;
+      default:
+        throw 'Unknown lane direction';
+    }
+  }
+
+  lane_left() {
+    switch (this.side) {
+      case 'north':
+        return this.height + this.width * this.index;
+      case 'south':
+        return this.height + this.width * this.index;
+      case 'west':
+        return 0;
+      case 'east':
+        return this.height + this.width * 6;
+      default:
+        throw 'Unknown lane direction';
+    }
+  }
+
+  lane_top() {
+    switch (this.side) {
+      case 'north':
+        return 0;
+      case 'south':
+        return this.height + this.width * 6;
+      case 'west':
+        return this.height + this.width * this.index;
+      case 'east':
+        return this.height + this.width * this.index;
+      default:
+        throw 'Unknown lane direction';
+    }
+  }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = TrafficLane;
+
 
 
 /***/ })

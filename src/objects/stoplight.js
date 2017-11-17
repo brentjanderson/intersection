@@ -1,6 +1,6 @@
 import eventEmitter from '../pubsub';
 
-const speed_constant = 8;
+const speed_constant = 1;
 
 const left_blink_interval = 500 / speed_constant; // 500 ms between blinks
 const green_light_interval = 10000 / speed_constant; // 10s to run a green light
@@ -31,6 +31,14 @@ export default class Stoplight {
       initial_status === 'green' ? green_light_interval : undefined;
     this.left_blink_timer = left_blink_interval;
     this.light_visible = true;
+
+    this._carHandler = eventEmitter.on(
+      'new-car',
+      car_opts => {
+        //
+      },
+      this
+    );
 
     this._tickHandler = eventEmitter.on(
       'tick',
@@ -106,8 +114,8 @@ export default class Stoplight {
 
         // Update lane objects for animation
         lane_objects.forEach(lane => {
-          if (this.light_visible) lane.set({ fill: this.status });
-          else lane.set({ fill: 'rgba(0,0,0,0)' });
+          if (this.light_visible) lane.canvasElement.set({ fill: this.status });
+          else lane.canvasElement.set({ fill: 'rgba(0,0,0,0)' });
         });
       },
       this
