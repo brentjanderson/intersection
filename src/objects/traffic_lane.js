@@ -34,7 +34,11 @@ export default class TrafficLane {
     });
 
     this._newCarHandler = eventEmitter.on('new-car', car_opts => {
-      if (car_opts.side === this.side && car_opts.lane === this.index) {
+      if (
+        car_opts.side === this.side &&
+        car_opts.lane === this.index &&
+        this.direction === 'oncoming'
+      ) {
         this.carCounter++;
         this._label.set('text', String(this.carCounter));
       }

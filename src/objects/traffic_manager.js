@@ -8,9 +8,9 @@ export default class TrafficManager {
       opts = {};
     }
     // Average frequency per car
-    this.car_arrival_frequency = opts.car_arrival_frequency || 500;
+    this.car_arrival_frequency = opts.car_arrival_frequency || 5000;
     // Amount to plus/minus from average frequency
-    this.car_arrival_spread = opts.car_arrival_spread || 0;
+    this.car_arrival_spread = opts.car_arrival_spread || 1000;
     // Default directions
     this.intersection_sides = opts.intersection_sides || [
       'north',
