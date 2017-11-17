@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha",
-    "start": "node index.js",
+    "start": "webpack && node index.js",
     "commitmsg": "commitlint -e $GIT_PARAMS",
     "watch": "webpack --watch"
   },
