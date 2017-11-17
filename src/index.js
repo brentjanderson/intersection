@@ -93,7 +93,10 @@ const sl_ew = new Stoplight(
 );
 
 // Create traffic manager
-const traffic_manager = new TrafficManager();
+const traffic_manager = new TrafficManager({
+  intersection_lanes: LANE_DIRECTIONS.length,
+  intersection_sides: LANE_SIDES
+});
 
 let lastFrameTimestamp = null;
 function renderLoop(stamp) {

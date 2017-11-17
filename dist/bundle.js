@@ -168,7 +168,10 @@ const sl_ew = new __WEBPACK_IMPORTED_MODULE_0__objects_stoplight__["a" /* defaul
 );
 
 // Create traffic manager
-const traffic_manager = new __WEBPACK_IMPORTED_MODULE_1__objects_traffic_manager__["a" /* default */]();
+const traffic_manager = new __WEBPACK_IMPORTED_MODULE_1__objects_traffic_manager__["a" /* default */]({
+  intersection_lanes: LANE_DIRECTIONS.length,
+  intersection_sides: LANE_SIDES
+});
 
 let lastFrameTimestamp = null;
 function renderLoop(stamp) {
@@ -232,14 +235,6 @@ class Stoplight {
       initial_status === 'green' ? green_light_interval : undefined;
     this.left_blink_timer = left_blink_interval;
     this.light_visible = true;
-
-    this._carHandler = __WEBPACK_IMPORTED_MODULE_0__pubsub__["a" /* default */].on(
-      'new-car',
-      car_opts => {
-        //
-      },
-      this
-    );
 
     this._tickHandler = __WEBPACK_IMPORTED_MODULE_0__pubsub__["a" /* default */].on(
       'tick',
@@ -315,8 +310,9 @@ class Stoplight {
 
         // Update lane objects for animation
         lane_objects.forEach(lane => {
-          if (this.light_visible) lane.canvasElement.set({ fill: this.status });
-          else lane.canvasElement.set({ fill: 'rgba(0,0,0,0)' });
+          if (this.light_visible)
+            lane.canvasElement.item(0).set({ fill: this.status });
+          else lane.canvasElement.item(0).set({ fill: 'rgba(0,0,0,0)' });
         });
       },
       this
@@ -719,15 +715,26 @@ if (true) {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__pubsub__ = __webpack_require__(5);
 
 
+const random_direction = () => {};
+
 class TrafficManager {
   constructor(opts) {
     if (opts === undefined) {
       opts = {};
     }
     // Average frequency per car
-    this.car_arrival_frequency = opts.car_arrival_frequency || 10000;
+    this.car_arrival_frequency = opts.car_arrival_frequency || 500;
     // Amount to plus/minus from average frequency
-    this.car_arrival_spread = opts.car_arrival_spread || 2000;
+    this.car_arrival_spread = opts.car_arrival_spread || 0;
+    // Default directions
+    this.intersection_sides = opts.intersection_sides || [
+      'north',
+      'south',
+      'east',
+      'west'
+    ];
+    // Default number of lanes
+    this.intersection_lanes = 6;
     // Timer for first car arrival
     this.time_since_last_car =
       this.car_arrival_frequency +
@@ -739,13 +746,22 @@ class TrafficManager {
         this.time_since_last_car +=
           this.car_arrival_frequency +
           (Math.random() * 2 - 1) * this.car_arrival_spread;
-
         __WEBPACK_IMPORTED_MODULE_0__pubsub__["a" /* default */].emit('new-car', {
-          direction: Math.random() >= 0.5 ? 'ns' : 'ew',
-          lane: Math.ceil(Math.random() * 4)
+          side: this.random_side(),
+          lane: this.random_lane()
         });
       }
     });
+  }
+
+  random_side() {
+    return this.intersection_sides[
+      Math.floor(Math.random() * this.intersection_sides.length + 1)
+    ];
+  }
+
+  random_lane() {
+    return Math.floor(Math.random() * this.intersection_lanes + 1);
   }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = TrafficManager;
@@ -757,7 +773,8 @@ class TrafficManager {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-const STROKE_WIDTH = 2;
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__pubsub__ = __webpack_require__(5);
+
 
 class TrafficLane {
   constructor(opts) {
@@ -767,17 +784,53 @@ class TrafficLane {
     this.width = opts.width;
     this.height = opts.height;
 
-    this.canvasElement = new fabric.Rect({
+    this._rect = new fabric.Rect({
       width: this.lane_width(),
       height: this.lane_height(),
-      left: this.lane_left(),
-      top: this.lane_top(),
-      strokeWidth: STROKE_WIDTH,
+      strokeWidth: 2,
       stroke: 'gray',
+      originX: 'center',
+      originY: 'center',
       fill: 'rgba(0,0,0,0)'
       //   angle: this.lane_angle(opts.side)
     });
+
+    this.carCounter = 0;
+
+    this._label = new fabric.Text(String(this.carCounter), {
+      angle: this.text_angle(),
+      fontSize: 16,
+      originX: 'center',
+      originY: 'center'
+    });
+
+    this.canvasElement = new fabric.Group([this._rect, this._label], {
+      left: this.lane_left(),
+      top: this.lane_top()
+    });
+
+    this._newCarHandler = __WEBPACK_IMPORTED_MODULE_0__pubsub__["a" /* default */].on('new-car', car_opts => {
+      if (car_opts.side === this.side && car_opts.lane === this.index) {
+        this.carCounter++;
+        this._label.set('text', String(this.carCounter));
+      }
+    });
   }
+
+  text_angle() {
+    switch (this.side) {
+      case 'south':
+      case 'north':
+        return 0;
+      case 'west':
+        return 90;
+      case 'east':
+        return 270;
+      default:
+        throw 'Unknown lane direction';
+    }
+  }
+
   lane_width() {
     switch (this.side) {
       case 'south':

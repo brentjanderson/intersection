@@ -32,14 +32,6 @@ export default class Stoplight {
     this.left_blink_timer = left_blink_interval;
     this.light_visible = true;
 
-    this._carHandler = eventEmitter.on(
-      'new-car',
-      car_opts => {
-        //
-      },
-      this
-    );
-
     this._tickHandler = eventEmitter.on(
       'tick',
       time_since_last_tick => {
@@ -114,8 +106,9 @@ export default class Stoplight {
 
         // Update lane objects for animation
         lane_objects.forEach(lane => {
-          if (this.light_visible) lane.canvasElement.set({ fill: this.status });
-          else lane.canvasElement.set({ fill: 'rgba(0,0,0,0)' });
+          if (this.light_visible)
+            lane.canvasElement.item(0).set({ fill: this.status });
+          else lane.canvasElement.item(0).set({ fill: 'rgba(0,0,0,0)' });
         });
       },
       this
